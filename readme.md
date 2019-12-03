@@ -20,7 +20,16 @@ download, git clone or get the docker files to your local machine somehow and go
 
 run `composer create-project --prefer-dist laravel/laravel src` to create a new Laravel project in the `src` directory
 
-I am using Laravel 6.x so I know my `.env` file will match the `docker-compose.yml` file. If you're using a different version, you'll need to change your .env to match the `docker-compose.yml` file, or the other way around.
+I am using Laravel 6.x and need to edit settings in my `.env` file to match `docker-compose.yml`. I change the following settings:
+
+```
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=laravel
+DB_PASSWORD=secret
+```
 
 run `docker-compose up -d` to create and run the containers.
 
