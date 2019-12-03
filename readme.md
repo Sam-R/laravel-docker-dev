@@ -4,6 +4,15 @@ A docker-compose environment for simple PHP/MySQL development. Setup for Laravel
 
 ## Basic Usage
 
+
+```
+├── .docker                 # Docker files, includes and associated dockery things
+├── docker-compose.yml      # the glue for this docker-compose magick
+├── readme.md               # You're here!
+└── src                     # Your Laravel project's code should be here
+    └── public              # The default web directory, normal PHP code goes here if not using Laravel!
+
+```
 Place your laravel project in `src`. (If you're just using PHP, you'll need to place your index file in `src/public`)
 
 run `sudo docker-compose up -d` to start the environment. The first time around this will build the PHP dockerfile so it will take some time!
@@ -40,6 +49,31 @@ I run `sudo docker exec -it php-dev bash` in a terminal so I can easily run my P
 ### Artisan commands
 
 You can run artisan and composer commands from inside the PHP container. `sudo docker exec -it php-dev /bin/bash` will connect a persistent console. Use `php artisan migrate` to test the database connection is established (you may have to edit your `.env` file in your laravel project to match this setup).
+
+## Horizon and Telescope
+
+### Install Horizon
+
+```
+sudo docker exec -it php-dev composer require laravel/horizon
+sudo docker exec -it php-dev php artisan horizon:install
+sudo docker exec -it php-dev php artisan migrate
+```
+
+http://localhost:8080/horizon
+
+
+### install Telescope
+
+```
+# Dev flag used for safety; you don't want to run _default_ telescope in production!
+sudo docker exec -it php-dev composer require laravel/telescope --dev
+sudo docker exec -it php-dev php artisan telescope:install
+sudo docker exec -it php-dev php artisan migrate
+php artisan telescope:publish
+```
+
+http://localhost:8080/telescope
 
 ## Removing containers/resetting database
 
