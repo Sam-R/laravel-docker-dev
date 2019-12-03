@@ -1,9 +1,5 @@
 version: '3'
 
-networks:
-    # A network for the laravel containers
-    laravel:
-
 services:
 
     # Nginx web server
@@ -21,6 +17,7 @@ services:
         networks:
             - laravel
 
+    # MySQL database server
     mysql:
         image: mysql:5.7
         container_name: mysql-dev
@@ -38,6 +35,7 @@ services:
         networks:
             - laravel
 
+    # Custom PHP image for Laravel
     php:
         build:
             context: .
@@ -49,3 +47,56 @@ services:
             - "9000:9000"
         networks:
             - laravel
+
+    # Redis, for caching and queues (Optional)
+    redis:
+        image: redis:5-alpine
+        container_name: redis-dev
+        restart: unless-stopped
+        ports:
+            - 6379:6379
+        networks:
+            - laravel
+
+    # Laravel Scheduler (Optional)
+    scheduler:
+        build:
+            context: .
+            dockerfile: ./.docker/Dockerfile.app
+        container_name: scheduler-dev
+        restart: unless-stopped
+        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do  /var/www/html/artisan schedule:run >> /dev/null 2>&1 ; sleep 60; done'
+        networks:
+            - laravel
+        volumes:
+            - ./src:/var/www/html
+
+    # Default Queue Worker (Optional)
+    worker-default:
+        build:
+            context: .
+            dockerfile: ./.docker/Dockerfile.app
+        container_name: worker-default-dev
+        restart: unless-stopped
+        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do  /var/www/html/artisan queue:work --tries=3 --timeout=90 --sleep=60; done'
+        networks:
+            - laravel
+        volumes:
+            - ./src:/var/www/html
+
+
+    # Mail catcher (Optional, Incomplete)
+    #mailcatcher:
+    #    image: schickling/mailcatcher
+    #ports:
+    #    - "1025:1025"
+    #    - "1080:1080"
+
+networks:
+    # A network for the laravel containers
+    laravel:
+
+
+# Persist the MySQL data somewhere sensible
+# volumes:
+#     mysql_data:
