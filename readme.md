@@ -12,6 +12,22 @@ You should be able to navigate to `http://localhost:8080` to view your applicati
 
 If you get permissions errors on files, check your user ID on the host by running `id` in a terminal. The dockerfile is set to `1000`, if yours doesn't match, change the docker file `.docker/Dockerfile.app` to reflect your user id.
 
+**NOTE**: You may want to remove all the _*existing*_ repository information with `find . | grep "\.git/" | xargs rm -rf`, otherwise your git commands may work against this repository instead of your own!
+
+### Exact steps I take
+
+download, git clone or get the docker files to your local machine somehow and go into the directory.
+
+run `composer create-project --prefer-dist laravel/laravel src` to create a new Laravel project in the `src` directory
+
+I am using Laravel 6.x so I know my `.env` file will match the `docker-compose.yml` file. If you're using a different version, you'll need to change your .env to match the `docker-compose.yml` file, or the other way around.
+
+run `docker-compose up -d` to create and run the containers.
+
+I can now go to my browser and see the default Laravel welcome page.
+
+I run `sudo docker exec -it php-dev bash` in a terminal so I can easily run my PHP artisan commands.
+
 ### Artisan commands
 
 You can run artisan and composer commands from inside the PHP container. `sudo docker exec -it php-dev /bin/bash` will connect a persistent console. Use `php artisan migrate` to test the database connection is established (you may have to edit your `.env` file in your laravel project to match this setup).
