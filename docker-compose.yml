@@ -58,6 +58,19 @@ services:
         networks:
             - laravel
 
+    # Laravel Horizion (Optional)
+    horizon:
+        build:
+            context: .
+            dockerfile: ./.docker/Dockerfile.app
+        container_name: horizon-dev
+        restart: unless-stopped
+        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do  /var/www/html/artisan horizon; sleep 60; done'
+        networks:
+            - laravel
+        volumes:
+            - ./src:/var/www/html
+
     # Laravel Scheduler (Optional)
     scheduler:
         build:
