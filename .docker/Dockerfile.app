@@ -4,7 +4,7 @@ FROM php:7.2-fpm
 WORKDIR /var/www/html
 
 # Install dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --quiet ca-certificates \
     build-essential \
     mariadb-client \
     libpng-dev \
@@ -19,24 +19,70 @@ RUN apt-get update && apt-get install -y \
     vim \
     unzip \
     curl \
+    libmcrypt-dev \
+    msmtp \
+    iproute2 \
     libmagickwand-dev
 
 # Clear cache: keep the container slim
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install extensions: Some extentions are better installed using this method than apt in docker
-RUN docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/
-RUN docker-php-ext-install pdo_mysql mbstring zip exif pcntl xml soap bcmath gd
+# Xdebug
+# Note that "host.docker.internal" is not currently supported on Linux. This nasty hack tries to resolve it
+# Source: https://github.com/docker/for-linux/issues/264
+RUN ip -4 route list match 0/0 | awk '{print $3" host.docker.internal"}' >> /etc/hosts
 
-# Install Redis and Imagick (Optional, but reccomended) and clear temp files
+# Install extensions: Some extentions are better installed using this method than apt in docker
+RUN docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ \
+    && docker-php-ext-install \
+        pdo_mysql \
+        mbstring \
+        zip \
+        exif \
+        pcntl \
+        xml \
+        soap \
+        bcmath \
+        gd
+
+# Install Redis, Imagick xDebug (Optional, but reccomended) and clear temp files
 RUN pecl install -o -f redis \
     imagick \
+    xdebug \
 &&  rm -rf /tmp/pear \
 &&  docker-php-ext-enable redis \
-    imagick
+    imagick \
+    xdebug
 
 # Install composer: This could be removed and run in it's own container
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Setup msmtp for PHP mail() command (Replaces abandoned ssmtp package in Debian)
+RUN echo '\n\
+host mailhog\n\
+port 1025\n\
+from php-dev@example.com\n' \
+>> /etc/msmtprc
+
+RUN echo 'sendmail_path = /usr/bin/msmtp -t' >> /usr/local/etc/php/php.ini
+
+# xdebug.remote_connect_back = true does NOT work in docker
+RUN echo '\n\
+[Xdebug]\n\
+xdebug.remote_enable=true\n\
+xdebug.remote_autostart=true\n\
+xdebug.remote_port=9000\n\
+xdebug.remote_host=docker.host.internal\n'\
+>> /usr/local/etc/php/php.ini
+
+RUN echo "request_terminate_timeout = 3600" >> /usr/local/etc/php-fpm.conf
+RUN echo "max_execution_time = 300" >> /usr/local/etc/php/php.ini
+
+# Xdebug
+# Note that "host.docker.internal" is not currently supported on Linux. This nasty hack tries to resolve it
+# Source: https://github.com/docker/for-linux/issues/264
+#RUN ip -4 route list match 0/0 | awk '{print $3" host.docker.internal"}' >> /etc/hosts
+RUN ip -4 route list match 0/0 | awk '{print "xdebug.remote_host="$3}' >> /usr/local/etc/php/php.ini
 
 # Add user for laravel application
 # NOTE: this requires the user on the host machine to be the same UID and GUI
@@ -49,6 +95,10 @@ RUN chown www:www -R /var/www/html
 
 # # Change current user to www
 USER www
+
+# Copy in a custom PHP.ini file
+# INCOMPLETE/UNTESTED
+#COPY source /usr/local/etc/php/php.ini
 
 # We should do this as a command once the container is up.
 # Leaving here incase someone wants to enable it here...

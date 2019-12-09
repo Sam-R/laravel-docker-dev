@@ -43,8 +43,9 @@ services:
         container_name: php-dev
         volumes:
             - ./src:/var/www/html
-        ports:
-            - "9000:9000"
+            # Load a custom PHP.ini file
+            #- ./.docker/php/php.ini:/usr/local/etc/php/php.ini
+        #command: ip -4 route list match 0/0 | awk '{print $$3" host.docker.internal"}' >> /etc/hosts
         networks:
             - laravel
 
@@ -97,13 +98,14 @@ services:
         volumes:
             - ./src:/var/www/html
 
-
-    # Mail catcher (Optional, Incomplete)
-    #mailcatcher:
-    #    image: schickling/mailcatcher
-    #ports:
-    #    - "1025:1025"
-    #    - "1080:1080"
+    mailhog:
+        image: mailhog/mailhog
+        container_name: mailhog-dev
+        networks:
+            - laravel
+        ports:
+            - 1025:1025 # smtp server
+            - 8025:8025 # web ui
 
 networks:
     # A network for the laravel containers
