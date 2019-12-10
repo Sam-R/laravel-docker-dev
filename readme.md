@@ -2,8 +2,16 @@
 
 A docker-compose environment for simple PHP/MySQL development. Setup for Laravel by default.
 
-## Basic Usage
+| Service | URL |
+| --- | --- |
+| Your website | http://localhost:8080 |
+| Horizon | http://localhost:8080/horizon |
+| Telescope | http://localhost:8080/telescope |
+| MailHog | http://localhost:8025 |
+| XDebug | port 9000 |
 
+
+## Basic Usage
 
 ```
 ├── .docker                 # Docker files, includes and associated dockery things
@@ -74,6 +82,48 @@ php artisan telescope:publish
 ```
 
 http://localhost:8080/telescope
+
+
+### XDebug
+
+XDebug is setup to talk to port 9000 on the docker host machine. You'll need to configure your IDE to accept connections on port 9000.
+
+I'd suggest using PHPStorm or a free IDE like Visual Studio Code https://code.visualstudio.com/docs/languages/php with the PHP Debug pluging: https://marketplace.visualstudio.com/items?itemName=felixfbecker.php-debug Other options include Netbeans and Eclipse. Sublime text and Atom also have limted XDebug capabilities.
+
+Under debug on visual studio code (left hand bar) click "add configuration". This is my complete configuration file:
+
+```
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Listen for XDebug",
+            "type": "php",
+            "request": "launch",
+            "port": 9000,
+            "pathMappings": {
+                "/var/www/html": "${workspaceFolder}/src"
+            },
+            "xdebugSettings": {
+                "show_hidden": 1
+            }
+        },
+        {
+            "name": "Launch currently open script",
+            "type": "php",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${fileDirname}",
+            "port": 9000
+        }
+    ]
+}
+```
+
+Note: You may have to change your firewall to allow connections on port 9000
 
 ## Removing containers/resetting database
 
