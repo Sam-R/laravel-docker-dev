@@ -34,6 +34,8 @@ services:
             SERVICE_NAME: mysql
         networks:
             - laravel
+        volumes:
+            - mysql_data:/var/lib/mysql
 
     # Custom PHP image for Laravel
     php:
@@ -113,6 +115,6 @@ networks:
     laravel:
 
 
-# Persist the MySQL data somewhere sensible
-# volumes:
-#     mysql_data:
+# Persist the MySQL data
+volumes:
+    mysql_data:
