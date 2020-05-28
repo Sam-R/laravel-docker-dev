@@ -58,6 +58,20 @@ I run `sudo docker exec -it php-dev bash` in a terminal so I can easily run my P
 
 You can run artisan and composer commands from inside the PHP container. `sudo docker exec -it php-dev /bin/bash` will connect a persistent console. Use `php artisan migrate` to test the database connection is established (you may have to edit your `.env` file in your laravel project to match this setup).
 
+### Mailhog
+
+To use mailhog, you need to setup your laravel `.env` file as follows:
+
+```
+MAIL_MAILER=smtp
+MAIL_HOST=mailhog
+MAIL_PORT=1025
+MAIL_USERNAME=null
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+Other `MAIL` lines should not be required and may cause errors, it's suggested you remove them.
+
 ## Horizon and Telescope
 
 ### Install Horizon
