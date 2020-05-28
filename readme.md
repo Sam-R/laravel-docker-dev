@@ -35,7 +35,7 @@ If you get permissions errors on files, check your user ID on the host by runnin
 
 download, git clone or get the docker files to your local machine somehow and go into the directory.
 
-run `composer create-project --prefer-dist laravel/laravel src` to create a new Laravel project in the `src` directory
+run `composer create-project --prefer-dist laravel/laravel src` to create a new Laravel project in the `src` directory. **NOTE** files must be owned by the user ID `1000` in this setup. You may need to change ownership manually. If you're on a multi-user system this may not be a good repository for you!
 
 I am using Laravel 6.x and need to edit settings in my `.env` file to match `docker-compose.yml`. I change the following settings:
 
@@ -66,7 +66,7 @@ To use mailhog, you need to setup your laravel `.env` file as follows:
 MAIL_MAILER=smtp
 MAIL_HOST=mailhog
 MAIL_PORT=1025
-MAIL_USERNAME=null
+MAIL_FROM_ADDRESS=test@example.com
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
