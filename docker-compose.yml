@@ -75,7 +75,7 @@ services:
             context: .
             dockerfile: ./.docker/Dockerfile.app
         restart: unless-stopped
-        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do  /var/www/html/artisan horizon; sleep 60; done'
+        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan horizon; sleep 60; done'
         networks:
             - laravel
         volumes:
@@ -87,7 +87,7 @@ services:
             context: .
             dockerfile: ./.docker/Dockerfile.app
         restart: unless-stopped
-        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do  /var/www/html/artisan schedule:run >> /dev/null 2>&1 ; sleep 60; done'
+        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan schedule:run >> /dev/null 2>&1 ; sleep 60; done'
         networks:
             - laravel
         volumes:
@@ -99,7 +99,7 @@ services:
             context: .
             dockerfile: ./.docker/Dockerfile.app
         restart: unless-stopped
-        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do  /var/www/html/artisan queue:work --tries=3 --timeout=90 --sleep=60; done'
+        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan queue:work --tries=3 --timeout=90 --sleep=10; done'
         networks:
             - laravel
         volumes:
