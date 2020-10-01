@@ -1,128 +1,126 @@
-version: '3'
+version: "3"
 
 services:
+  # Nginx web server
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      # OPTIONAL: change the port number before the colon ":" to alter we traffic port
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./.docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      # for this container to run, wait until PHP and MYSQL are running
+      - php
+      - mysql
+    networks:
+      # OPTIONAL: change or remove the network name (do this for all containers)
+      - laravel
 
-    # Nginx web server
-    nginx:
-        image: nginx:stable-alpine
-        ports:
-            # OPTIONAL: change the port number before the colon ":" to alter we traffic port
-            - "8080:80"
-        volumes:
-            - ./src:/var/www/html
-            - ./.docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-        depends_on:
-            # for this container to run, wait until PHP and MYSQL are running
-            - php
-            - mysql
-        networks:
-            # OPTIONAL: change or remove the network name (do this for all containers)
-            - laravel
+  # MySQL database server
+  mysql:
+    image: mysql:5.7
+    restart: unless-stopped
+    tty: true
+    ports:
+      # OPTIONAL: Change the port number before the colon ":" to alter where MySQL binds on the host
+      # Allow connections to MySQL from the host (MySQL Workbench, DataGrip, etc) on port 33060
+      # WARNING: do not expose in production!
+      - "3306:3306"
+    environment:
+      # OPTIONAL: Change MySQL credentials
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - laravel
+    volumes:
+      # Persist MySQL data with a docker volume (see end of file)
+      - mysql_data:/var/lib/mysql
 
-    # MySQL database server
-    mysql:
-        image: mysql:5.7
-        restart: unless-stopped
-        tty: true
-        ports:
-            # OPTIONAL: Change the port number before the colon ":" to alter where MySQL binds on the host
-            # Allow connections to MySQL from the host (MySQL Workbench, DataGrip, etc) on port 33060
-            # WARNING: do not expose in production!
-            - "3306:3306"
-        environment:
-            # OPTIONAL: Change MySQL credentials
-            MYSQL_ROOT_PASSWORD: secret
-            MYSQL_DATABASE: laravel
-            MYSQL_USER: laravel
-            MYSQL_PASSWORD: secret
-            SERVICE_TAGS: dev
-            SERVICE_NAME: mysql
-        networks:
-            - laravel
-        volumes:
-            # Persist MySQL data with a docker volume (see end of file)
-            - mysql_data:/var/lib/mysql
+  # Custom PHP image for Laravel
+  php:
+    build:
+      context: .
+      dockerfile: ./.docker/Dockerfile.app
+    volumes:
+      - ./src:/var/www/html
+      # Load a custom PHP.ini file
+      #- ./.docker/php/php.ini:/usr/local/etc/php/php.ini
+    #command: ip -4 route list match 0/0 | awk '{print $$3" host.docker.internal"}' >> /etc/hosts
+    networks:
+      - laravel
 
-    # Custom PHP image for Laravel
-    php:
-        build:
-            context: .
-            dockerfile: ./.docker/Dockerfile.app
-        volumes:
-            - ./src:/var/www/html
-            # Load a custom PHP.ini file
-            #- ./.docker/php/php.ini:/usr/local/etc/php/php.ini
-        #command: ip -4 route list match 0/0 | awk '{print $$3" host.docker.internal"}' >> /etc/hosts
-        networks:
-            - laravel
+  # Redis, for caching and queues (Optional)
+  redis:
+    image: redis:5-alpine
+    restart: unless-stopped
+    # OPTIONAL: change or open up Redis port binding.
+    # Disabled by default for security. Redis should not be exposed to the world!
+    # your other containers should still be able to access it without this enabled
+    #ports:
+    #- 6379:6379
+    networks:
+      - laravel
 
-    # Redis, for caching and queues (Optional)
-    redis:
-        image: redis:5-alpine
-        restart: unless-stopped        
-        # OPTIONAL: change or open up Redis port binding.
-        # Disabled by default for security. Redis should not be exposed to the world!
-        # your other containers should still be able to access it without this enabled
-        #ports:
-            #- 6379:6379
-        networks:
-            - laravel
+  # Laravel Horizion (Optional)
+  # NOTE: if you're not running horizon, you should delete this stanza or you'll get errors
+  horizon:
+    build:
+      context: .
+      dockerfile: ./.docker/Dockerfile.app
+    restart: unless-stopped
+    command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan horizon; sleep 60; done'
+    networks:
+      - laravel
+    volumes:
+      - ./src:/var/www/html
 
-    # Laravel Horizion (Optional)
-    # NOTE: if you're not running horizon, you should delete this stanza or you'll get errors
-    horizon:
-        build:
-            context: .
-            dockerfile: ./.docker/Dockerfile.app
-        restart: unless-stopped
-        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan horizon; sleep 60; done'
-        networks:
-            - laravel
-        volumes:
-            - ./src:/var/www/html
+  # Laravel Scheduler (Optional)
+  scheduler:
+    build:
+      context: .
+      dockerfile: ./.docker/Dockerfile.app
+    restart: unless-stopped
+    command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan schedule:run >> /dev/null 2>&1 ; sleep 60; done'
+    networks:
+      - laravel
+    volumes:
+      - ./src:/var/www/html
 
-    # Laravel Scheduler (Optional)
-    scheduler:
-        build:
-            context: .
-            dockerfile: ./.docker/Dockerfile.app
-        restart: unless-stopped
-        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan schedule:run >> /dev/null 2>&1 ; sleep 60; done'
-        networks:
-            - laravel
-        volumes:
-            - ./src:/var/www/html
+  # Default Queue Worker (Optional)
+  worker-default:
+    build:
+      context: .
+      dockerfile: ./.docker/Dockerfile.app
+    restart: unless-stopped
+    command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan queue:work --tries=3 --timeout=90 --sleep=10; done'
+    networks:
+      - laravel
+    volumes:
+      - ./src:/var/www/html
 
-    # Default Queue Worker (Optional)
-    worker-default:
-        build:
-            context: .
-            dockerfile: ./.docker/Dockerfile.app
-        restart: unless-stopped
-        command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan queue:work --tries=3 --timeout=90 --sleep=10; done'
-        networks:
-            - laravel
-        volumes:
-            - ./src:/var/www/html
-
-    # Mailhug (Optional, mail-catcher)
-    # Comment out or delete this if you don't want to use it
-    mailhog:
-        image: mailhog/mailhog
-        networks:
-            - laravel
-        ports:
-            # Uncomment to allow host access to SMTP (not sure why you'd want to?!)
-            # your containers on the same network can still access this without the binding
-            # - 1025:1025 # smtp server
-            # OPTIONAL: Change the port number before the colon ":" to alter where the Mailhog UI can be accessed
-            - 8025:8025 # web ui
+  # Mailhug (Optional, mail-catcher)
+  # Comment out or delete this if you don't want to use it
+  mailhog:
+    image: mailhog/mailhog
+    networks:
+      - laravel
+    ports:
+      # Uncomment to allow host access to SMTP (not sure why you'd want to?!)
+      # your containers on the same network can still access this without the binding
+      # - 1025:1025 # smtp server
+      # OPTIONAL: Change the port number before the colon ":" to alter where the Mailhog UI can be accessed
+      - 8025:8025 # web ui
 
 networks:
-    # A network for the laravel containers
-    laravel:
-
+  # A network for the laravel containers
+  laravel:
 
 # Persist the MySQL data
 volumes:
-    mysql_data:
+  mysql_data:
