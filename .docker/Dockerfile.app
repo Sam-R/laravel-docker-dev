@@ -1,4 +1,4 @@
-FROM php:7.2-fpm
+FROM php:7-fpm
 
 # Set working directory for future docker commands
 WORKDIR /var/www/html
@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --quiet ca-certificates \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
     locales \
+    libzip-dev \
     zip \
     jpegoptim optipng pngquant gifsicle \
     vim \
@@ -22,6 +23,7 @@ RUN apt-get update && apt-get install -y --quiet ca-certificates \
     libmcrypt-dev \
     msmtp \
     iproute2 \
+    libonig-dev \
     libmagickwand-dev
 
 # Clear cache: keep the container slim
@@ -33,17 +35,16 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN ip -4 route list match 0/0 | awk '{print $3" host.docker.internal"}' >> /etc/hosts
 
 # Install extensions: Some extentions are better installed using this method than apt in docker
-RUN docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ \
+RUN docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
     && docker-php-ext-install \
         pdo_mysql \
-        mbstring \
-        zip \
         exif \
         pcntl \
         xml \
         soap \
         bcmath \
-        gd
+        gd \
+        zip
 
 # Install Redis, Imagick xDebug (Optional, but reccomended) and clear temp files
 RUN pecl install -o -f redis \
@@ -56,15 +57,6 @@ RUN pecl install -o -f redis \
 
 # Install composer: This could be removed and run in it's own container
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# Setup msmtp for PHP mail() command (Replaces abandoned ssmtp package in Debian)
-RUN echo '\n\
-host mailhog\n\
-port 1025\n\
-from php-dev@example.com\n' \
->> /etc/msmtprc
-
-RUN echo 'sendmail_path = /usr/bin/msmtp -t' >> /usr/local/etc/php/php.ini
 
 # xdebug.remote_connect_back = true does NOT work in docker
 RUN echo '\n\
