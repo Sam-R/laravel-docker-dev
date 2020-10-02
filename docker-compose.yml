@@ -1,7 +1,22 @@
 version: "3"
 
 services:
-  # Nginx web server
+
+  ###################################################################
+  # Webserver
+  ###################################################################
+  # In order to connect to your project via a web browser
+  # you need to have a webserver.
+  # In this case, Nginx provides that service. It serves static
+  # content such as HTML and CSS,
+  # while linking to the PHP container which compiles and
+  # servers PHP
+  #
+  # It's important to:
+  # - "Expose" ports so your local machine can connect
+  # - mount "volumes" for your web app source and nginx config
+  #   Your web app volume MUST be the same as that in PHP
+  ###################################################################
   nginx:
     image: nginx:stable-alpine
     ports:
@@ -18,7 +33,21 @@ services:
       # OPTIONAL: change or remove the network name (do this for all containers)
       - laravel
 
-  # MySQL database server
+  ###################################################################
+  # Database Server
+  ###################################################################
+  # A common database in LEMP stacks is MySQL. This container runs
+  # MySQL for you, so you don't need to run it locally. One project
+  # can have one MySQL instance keeping things isolated and it makes
+  # it easier to deploy (most of the time!)
+  #
+  # It's important to:
+  # - be careful exposing ports! Only do it locally or if your
+  #   server is firewalled. DO NOT EXPOSE LIVE!
+  # - set your environment secrets to match your app
+  # - Be aware that data is persisted using a volume, which I imagine
+  #   most people will want, but maybe you don't.
+  ###################################################################
   mysql:
     image: mysql:5.7
     restart: unless-stopped
@@ -42,20 +71,36 @@ services:
       # Persist MySQL data with a docker volume (see end of file)
       - mysql_data:/var/lib/mysql
 
-  # Custom PHP image for Laravel
+  ###################################################################
+  # PHP (FPM)
+  ###################################################################
+  # Used to execite PHP and run FPM (process manager), which is
+  # important for LEMP stacks.
+  #
+  # It's important to:
+  # - set your environment secrets to match your app
+  # - Read an understand the custom docker file. You'll see a lot
+  #   you can change in there.
+  ###################################################################
   php:
     build:
       context: .
       dockerfile: ./.docker/Dockerfile.app
     volumes:
       - ./src:/var/www/html
-      # Load a custom PHP.ini file
+      # Optionally Load a custom PHP.ini file
+      # This can be used to increase timeouts, etc
       #- ./.docker/php/php.ini:/usr/local/etc/php/php.ini
+    # You may want to allow the docker container to connect to your host machine (say for local MySQL)
+    # I'm not sure this currently works on Liunx, but is the best attempt I was able to find.
+    # Note: it does need iproute2 installed inside the Dockerfile.app
     #command: ip -4 route list match 0/0 | awk '{print $$3" host.docker.internal"}' >> /etc/hosts
     networks:
       - laravel
 
+  ###################################################################
   # Redis, for caching and queues (Optional)
+  ###################################################################
   redis:
     image: redis:5-alpine
     restart: unless-stopped
@@ -67,20 +112,24 @@ services:
     networks:
       - laravel
 
+  ###################################################################
   # Laravel Horizion (Optional)
   # NOTE: if you're not running horizon, you should delete this stanza or you'll get errors
-  horizon:
-    build:
-      context: .
-      dockerfile: ./.docker/Dockerfile.app
-    restart: unless-stopped
-    command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan horizon; sleep 60; done'
-    networks:
-      - laravel
-    volumes:
-      - ./src:/var/www/html
+  ###################################################################
+  # horizon:
+  #   build:
+  #     context: .
+  #     dockerfile: ./.docker/Dockerfile.app
+  #   restart: unless-stopped
+  #   command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan horizon; sleep 60; done'
+  #   networks:
+  #     - laravel
+  #   volumes:
+  #     - ./src:/var/www/html
 
+  ###################################################################
   # Laravel Scheduler (Optional)
+  ###################################################################
   scheduler:
     build:
       context: .
@@ -92,7 +141,9 @@ services:
     volumes:
       - ./src:/var/www/html
 
+  ###################################################################
   # Default Queue Worker (Optional)
+  ###################################################################
   worker-default:
     build:
       context: .
@@ -104,6 +155,11 @@ services:
     volumes:
       - ./src:/var/www/html
 
+
+
+  ###################################################################
+  # Email Catchers (Pick one!)
+  ###################################################################
   # Mailhug (Optional, mail-catcher)
   # Comment out or delete this if you don't want to use it
   mailhog:
@@ -117,10 +173,19 @@ services:
       # OPTIONAL: Change the port number before the colon ":" to alter where the Mailhog UI can be accessed
       - 8025:8025 # web ui
 
+  # # MailDev (Optional, mail-catcher)
+  # # Comment out or delete this if you don't want to use it
+  # maildev:
+  #     image: maildev/maildev
+  #     tty: true
+  #     ports:
+  #     #- '1030:1025'
+  #     - '1080:80'
+  #     #restart: always
+  #     restart: on-failure
+  #     networks:
+  #     - laravel
+
 networks:
   # A network for the laravel containers
   laravel:
-
-# Persist the MySQL data
-volumes:
-  mysql_data:
