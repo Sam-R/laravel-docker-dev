@@ -69,7 +69,7 @@ services:
       - laravel
     volumes:
       # Persist MySQL data with a docker volume (see end of file)
-      - mysql_data:/var/lib/mysql
+      - ./mysql_data:/var/lib/mysql
 
   ###################################################################
   # PHP (FPM)
