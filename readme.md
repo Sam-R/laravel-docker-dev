@@ -210,6 +210,49 @@ docker-compose exec nginx sh
 ```
 and using that value to update the `docker-compose.yml` file, then rebuilding the stack using `docker-compose up -d --build`
 
+### Xdebug Profiler
+
+You can enable xdebug's profiler by amending the `Dockerfile.app` and uncommenting the lines under xdebug, as below.
+
+You may want to update the output name for the profiled documents.
+
+```
+###############################################################################
+# xdebug
+###############################################################################
+FROM base as xdebug
+
+RUN pecl install xdebug \
+    && echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.remote_autostart=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.default_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.remote_connect_back=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.remote_port = 9001" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.idekey = VSCODE" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.remote_log = /tmp/xdebug.log" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.remote_handler=dbgp" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    # XDEBUG Profiling
+    && echo 'xdebug.profiler_enable = 1' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo 'xdebug.profiler_output_name = "cachegrind.out.%c"' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo 'xdebug.profiler_output_dir = "/tmp"' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo 'xdebug.profiler_enable_trigger = 1' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && docker-php-ext-enable xdebug
+```
+
+> **NOTE**: the `profiler_output_dir` must be mounted in the docker-compose.yml file in order to be visible by your profiling tool
+
+Now change the `docker-compose.yml` file to add mount points for `/tmp` under any PHP container you wish to profile.
+
+```
+      # OPTIONAL: add the xdebug profiler path.
+      # This requires you to edit the Dockerfile.app and uncomment the profiler options
+      - ./xdebug-profiler:/tmp
+```
+
+finally rebuild the stack `sudo docker-compose up -d --build` to apply the changes
+
+> **NOTE**: the xdebug profiler can generate large files, so make sure you disable it when you don't need it and keep the folder size in check through manual deletion
 
 ## Removing containers/resetting database
 

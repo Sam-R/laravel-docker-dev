@@ -2,3 +2,4 @@ src/*
 .env
 mysql_data/*
 .vscode/*
+xdebug-profiler/*

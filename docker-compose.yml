@@ -61,7 +61,7 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: secret
     volumes:
-      # Persist MySQL data with a docker volume (see end of file)
+      # Persist MySQL data with
       - ./mysql_data:/var/lib/mysql
 
   ###################################################################
@@ -82,10 +82,13 @@ services:
       args:
         # Define the default User ID for the file ownership of these containers.
         # to find this out on a unix based system type "id" into a terminal.
-        - UID=1000
+        UID: 1000
     volumes:
       - ./src:/var/www
-      # Optionally Load a custom PHP.ini file
+      # OPTIONAL: add the xdebug profiler path.
+      # This requires you to edit the Dockerfile.app and uncomment the profiler options
+      #- ./xdebug-profiler:/tmp
+      # OPTIONAL: Load a custom PHP.ini file
       # This can be used to increase timeouts, etc
       #- ./.docker/php/php.ini:/usr/local/etc/php/php.ini
     # You may want to allow the docker container to connect to your host machine (say for local MySQL)
@@ -123,6 +126,9 @@ services:
   #   command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan horizon; sleep 60; done'
   #   volumes:
   #     - ./src:/var/www
+  #   # OPTIONAL: add the xdebug profiler path.
+  #   # This requires you to edit the Dockerfile.app and uncomment the profiler options
+  #   #- ./xdebug-profiler:/tmp
 
   ###################################################################
   # Laravel Scheduler (Optional)
@@ -139,10 +145,9 @@ services:
     command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan schedule:run >> /dev/null 2>&1 ; sleep 60; done'
     volumes:
       - ./src:/var/www
-    # Define the default User ID for the file ownership of these containers.
-    # to find this out on a unix based system type "id" into a terminal.
-    environment:
-      - UID=1000
+      # OPTIONAL: add the xdebug profiler path.
+      # This requires you to edit the Dockerfile.app and uncomment the profiler options
+      #- ./xdebug-profiler:/tmp
 
   ###################################################################
   # Default Queue Worker (Optional)
@@ -159,10 +164,9 @@ services:
     command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan queue:work --tries=3 --timeout=90 --sleep=10; done'
     volumes:
       - ./src:/var/www
-    # Define the default User ID for the file ownership of these containers.
-    # to find this out on a unix based system type "id" into a terminal.
-    environment:
-      - UID=1000
+      # OPTIONAL: add the xdebug profiler path.
+      # This requires you to edit the Dockerfile.app and uncomment the profiler options
+      #- ./xdebug-profiler:/tmp
 
   ###################################################################
   # Email Catchers (Pick one!)

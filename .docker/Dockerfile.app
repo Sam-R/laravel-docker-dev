@@ -9,7 +9,8 @@ FROM php:7-fpm as base
 WORKDIR /var/www
 
 # Install dependencies
-RUN apt-get update && apt-get install -y --quiet ca-certificates \
+RUN apt-get update && apt-get install -y --quiet \
+    ca-certificates \
     build-essential \
     libpng-dev \
     libxml2-dev \
@@ -28,7 +29,6 @@ RUN apt-get update && apt-get install -y --quiet ca-certificates \
     msmtp \
     libonig-dev \
     libmagickwand-dev \
-    iproute2 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install extensions: Some extentions are better installed using this method than apt in docker
@@ -45,13 +45,10 @@ RUN docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/i
 
 # Install Imagick
 RUN pecl install -o -f imagick \
+    redis \
     &&  rm -rf /tmp/pear \
-    &&  docker-php-ext-enable imagick
-
-# Install Redis
-RUN pecl install -o -f redis \
-    &&  rm -rf /tmp/pear \
-    &&  docker-php-ext-enable redis
+    &&  docker-php-ext-enable imagick \
+    redis
 
 ###############################################################################
 # COMPOSER
@@ -70,8 +67,8 @@ RUN composer install --no-dev --no-scripts --no-autoloader
 
 COPY . /var/www
 
-RUN composer install --no-dev
-RUN composer dump-autoload -o
+RUN composer install --no-dev && \
+    composer dump-autoload -o
 
 ###############################################################################
 # php-config
@@ -80,21 +77,19 @@ RUN composer dump-autoload -o
 ###############################################################################
 FROM base as php-config
 
-# increase execution timeout
-RUN echo "request_terminate_timeout = 3600" >> /usr/local/etc/php-fpm.conf
-RUN echo "max_execution_time = 300" >> /usr/local/etc/php/php.ini
-
+# increase execution timeout and
 # Add PHP unit alias (assuming it's in the vendor directory like with Laravel)
-RUN echo 'alias phpunit="vendor/bin/phpunit"' >> /etc/bash.bashrc
+RUN echo "request_terminate_timeout = 3600" >> /usr/local/etc/php-fpm.conf && \
+    echo "max_execution_time = 300" >> /usr/local/etc/php/php.ini && \
+    echo 'alias phpunit="vendor/bin/phpunit"' >> /etc/bash.bashrc
 
 ###############################################################################
 # xdebug
 ###############################################################################
 FROM base as xdebug
 
-RUN pecl install xdebug
-
-RUN echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+RUN pecl install xdebug \
+    && echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && echo "xdebug.remote_autostart=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && echo "xdebug.default_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
@@ -103,6 +98,11 @@ RUN echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xd
     && echo "xdebug.idekey = VSCODE" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && echo "xdebug.remote_log = /tmp/xdebug.log" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && echo "xdebug.remote_handler=dbgp" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    # XDEBUG Profiling
+    # && echo 'xdebug.profiler_enable = 1' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    # && echo 'xdebug.profiler_output_name = "cachegrind.out.%c"' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    # && echo 'xdebug.profiler_output_dir = "/tmp"' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    # && echo 'xdebug.profiler_enable_trigger = 1' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
     && docker-php-ext-enable xdebug
 
 ###############################################################################
@@ -112,21 +112,19 @@ RUN echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xd
 ###############################################################################
 FROM xdebug as fpm
 
-# Add user for laravel application
-# NOTE: this requires the user on the host machine to be the same UID and GUI
-#       find out by running `id` in a terminal on the host
-ARG UID
-RUN echo "Setting docker user ID to $UID"
-RUN groupadd -g $UID www
-RUN useradd -u $UID -ms /bin/bash -g www www
-
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 COPY --from=php-config /usr/local/etc /usr/local/etc
 COPY --from=php-config /etc/bash.bashrc /etc/bash.bashrc
 COPY --from=composer /var/www /var/www
 
-# Make sure permissions match host and container
-RUN chown www:www -R /var/www
+# Add user for laravel application
+# and make sure permissions match host and container
+# NOTE: this requires the user on the host machine to be the same UID and GUI
+#       find out by running `id` in a terminal on the host
+ARG UID=1000
+RUN groupadd -g ${UID} www && \
+    useradd -u ${UID} -ms /bin/bash -g www www && \
+    chown www:www -R /var/www
 
-# # Change current user to www
+# Change current user to www
 USER www
