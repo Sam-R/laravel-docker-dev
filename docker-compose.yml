@@ -23,15 +23,12 @@ services:
       # OPTIONAL: change the port number before the colon ":" to alter we traffic port
       - "8080:80"
     volumes:
-      - ./src:/var/www/html
-      - ./.docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./src:/var/www
+      - ./.docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       # for this container to run, wait until PHP and MYSQL are running
       - php
       - mysql
-    networks:
-      # OPTIONAL: change or remove the network name (do this for all containers)
-      - laravel
 
   ###################################################################
   # Database Server
@@ -61,12 +58,8 @@ services:
       # OPTIONAL: Change MySQL credentials
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: laravel
-      MYSQL_USER: laravel
+      MYSQL_USER: root
       MYSQL_PASSWORD: secret
-      SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
-    networks:
-      - laravel
     volumes:
       # Persist MySQL data with a docker volume (see end of file)
       - ./mysql_data:/var/lib/mysql
@@ -84,10 +77,14 @@ services:
   ###################################################################
   php:
     build:
-      context: .
-      dockerfile: ./.docker/Dockerfile.app
+      context: ./src
+      dockerfile: ../.docker/Dockerfile.app
+      args:
+        # Define the default User ID for the file ownership of these containers.
+        # to find this out on a unix based system type "id" into a terminal.
+        - UID=1000
     volumes:
-      - ./src:/var/www/html
+      - ./src:/var/www
       # Optionally Load a custom PHP.ini file
       # This can be used to increase timeouts, etc
       #- ./.docker/php/php.ini:/usr/local/etc/php/php.ini
@@ -95,8 +92,8 @@ services:
     # I'm not sure this currently works on Liunx, but is the best attempt I was able to find.
     # Note: it does need iproute2 installed inside the Dockerfile.app
     #command: ip -4 route list match 0/0 | awk '{print $$3" host.docker.internal"}' >> /etc/hosts
-    networks:
-      - laravel
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
 
   ###################################################################
   # Redis, for caching and queues (Optional)
@@ -109,8 +106,6 @@ services:
     # your other containers should still be able to access it without this enabled
     #ports:
     #- 6379:6379
-    networks:
-      - laravel
 
   ###################################################################
   # Laravel Horizion (Optional)
@@ -118,44 +113,56 @@ services:
   ###################################################################
   # horizon:
   #   build:
-  #     context: .
-  #     dockerfile: ./.docker/Dockerfile.app
+  #     context: ./src
+  #     dockerfile: ../.docker/Dockerfile.app
+  #     # Define the default User ID for the file ownership of these containers.
+  #     # to find this out on a unix based system type "id" into a terminal.
+  #     args:
+  #       - UID=1000
   #   restart: unless-stopped
   #   command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan horizon; sleep 60; done'
-  #   networks:
-  #     - laravel
   #   volumes:
-  #     - ./src:/var/www/html
+  #     - ./src:/var/www
 
   ###################################################################
   # Laravel Scheduler (Optional)
   ###################################################################
   scheduler:
     build:
-      context: .
-      dockerfile: ./.docker/Dockerfile.app
+      context: ./src
+      dockerfile: ../.docker/Dockerfile.app
+      # Define the default User ID for the file ownership of these containers.
+      # to find this out on a unix based system type "id" into a terminal.
+      args:
+        - UID=1000
     restart: unless-stopped
     command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan schedule:run >> /dev/null 2>&1 ; sleep 60; done'
-    networks:
-      - laravel
     volumes:
-      - ./src:/var/www/html
+      - ./src:/var/www
+    # Define the default User ID for the file ownership of these containers.
+    # to find this out on a unix based system type "id" into a terminal.
+    environment:
+      - UID=1000
 
   ###################################################################
   # Default Queue Worker (Optional)
   ###################################################################
   worker-default:
     build:
-      context: .
-      dockerfile: ./.docker/Dockerfile.app
+      context: ./src
+      dockerfile: ../.docker/Dockerfile.app
+      # Define the default User ID for the file ownership of these containers.
+      # to find this out on a unix based system type "id" into a terminal.
+      args:
+        - UID=1000
     restart: unless-stopped
     command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan queue:work --tries=3 --timeout=90 --sleep=10; done'
-    networks:
-      - laravel
     volumes:
-      - ./src:/var/www/html
-
-
+      - ./src:/var/www
+    # Define the default User ID for the file ownership of these containers.
+    # to find this out on a unix based system type "id" into a terminal.
+    environment:
+      - UID=1000
 
   ###################################################################
   # Email Catchers (Pick one!)
@@ -164,8 +171,6 @@ services:
   # Comment out or delete this if you don't want to use it
   mailhog:
     image: mailhog/mailhog
-    networks:
-      - laravel
     ports:
       # Uncomment to allow host access to SMTP (not sure why you'd want to?!)
       # your containers on the same network can still access this without the binding
@@ -183,9 +188,3 @@ services:
   #     - '1080:80'
   #     #restart: always
   #     restart: on-failure
-  #     networks:
-  #     - laravel
-
-networks:
-  # A network for the laravel containers
-  laravel:
