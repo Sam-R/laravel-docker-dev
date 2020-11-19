@@ -10,7 +10,7 @@ Runs PHP 7.4. For PHP 7.2 checkout the `php-7.2` branch.
 | Horizon | http://localhost:8080/horizon |
 | Telescope | http://localhost:8080/telescope |
 | MailHog | http://localhost:8025 |
-| -XDebug- | -port 9000- |
+| -XDebug- | -port 9001- |
 
 
 ## Setup
