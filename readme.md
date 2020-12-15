@@ -27,13 +27,13 @@ move into the project directory
 cd laravel-docker-dev
 ```
 
-setup a new Laravel codebase in the src folder
+setup a new Symfony codebase in the src folder
 
 ```
-sudo docker run --rm --user $(id -u):$(id -g) -v $(pwd):/app composer create-project --prefer-dist laravel/laravel src
+sudo docker run --rm --user $(id -u):$(id -g) -v $(pwd):/app composer create-project symfony/website-skeleton src
 ```
 
-Make sure to setup and environment variables in the Laravel `src/.env`
+Make sure to setup and environment variables in the `src/.env`
 
 Bring up the docker-compose environment (building the PHP containers)
 
@@ -47,12 +47,12 @@ sudo docker-compose up -d --build
 ├── .docker                 # Docker files, includes and associated dockery things
 ├── docker-compose.yml      # the glue for this docker-compose magick
 ├── readme.md               # You're here!
-└── src                     # Your Laravel project's code should be here
-    └── public              # The default web directory, normal PHP code goes here if not using Laravel!
+└── src                     # Your symfony project's code should be here
+    └── public              # The default web directory, normal PHP code goes here if not using symfony!
 
 ```
 
-Place your laravel project in `src`. (If you're just using PHP, you'll need to place your index file in `src/public`)
+Place your symfony project in `src`. (If you're just using PHP, you'll need to place your index file in `src/public`)
 
 run `sudo docker-compose up -d` to start the environment. The first time around this will build the PHP dockerfile so it will take some time!
 
@@ -73,22 +73,13 @@ There are multiple entries for this, so make sure you update all of them! You'll
 
 ### Database credentials
 
-I am using Laravel 6.x and need to edit settings in my `.env` file to match `docker-compose.yml`. I change the following settings:
+**TO DO**
 
-```
-DB_CONNECTION=mysql
-DB_HOST=mysql
-DB_PORT=3306
-DB_DATABASE=laravel
-DB_USERNAME=laravel
-DB_PASSWORD=secret
-```
-
-### Artisan commands
-
-You can run artisan and composer commands from inside the PHP container. `sudo docker-compose exec -it php /bin/bash` will connect a persistent console. Use `php artisan migrate` to test the database connection is established (you may have to edit your `.env` file in your laravel project to match this setup).
+edit settings in my `.env` file to match `docker-compose.yml`.
 
 ### Mailhog
+
+**TO DO**
 
 To use mailhog, you need to setup your laravel `.env` file as follows:
 
@@ -101,32 +92,6 @@ MAIL_FROM_NAME="${APP_NAME}"
 ```
 
 Other `MAIL` lines should not be required and may cause errors, it's suggested you remove them.
-
-## Horizon and Telescope
-
-### Install Horizon
-
-```
-sudo docker-compose exec -it php composer require laravel/horizon
-sudo docker-compose exec -it php php artisan horizon:install
-sudo docker-compose exec -it php php artisan migrate
-```
-
-http://localhost:8080/horizon
-
-
-### install Telescope
-
-```
-# Dev flag used for safety; you don't want to run _default_ telescope in production!
-sudo docker-compose exec -it php composer require laravel/telescope --dev
-sudo docker-compose exec -it php php artisan telescope:install
-sudo docker-compose exec -it php php artisan migrate
-php artisan telescope:publish
-```
-
-http://localhost:8080/telescope
-
 
 ### XDebug
 

@@ -111,64 +111,6 @@ services:
     #- 6379:6379
 
   ###################################################################
-  # Laravel Horizion (Optional)
-  # NOTE: if you're not running horizon, you should delete this stanza or you'll get errors
-  ###################################################################
-  # horizon:
-  #   build:
-  #     context: ./src
-  #     dockerfile: ../.docker/Dockerfile.app
-  #     # Define the default User ID for the file ownership of these containers.
-  #     # to find this out on a unix based system type "id" into a terminal.
-  #     args:
-  #       - UID=1000
-  #   restart: unless-stopped
-  #   command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan horizon; sleep 60; done'
-  #   volumes:
-  #     - ./src:/var/www
-  #   # OPTIONAL: add the xdebug profiler path.
-  #   # This requires you to edit the Dockerfile.app and uncomment the profiler options
-  #   #- ./xdebug-profiler:/tmp
-
-  ###################################################################
-  # Laravel Scheduler (Optional)
-  ###################################################################
-  scheduler:
-    build:
-      context: ./src
-      dockerfile: ../.docker/Dockerfile.app
-      # Define the default User ID for the file ownership of these containers.
-      # to find this out on a unix based system type "id" into a terminal.
-      args:
-        - UID=1000
-    restart: unless-stopped
-    command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan schedule:run >> /dev/null 2>&1 ; sleep 60; done'
-    volumes:
-      - ./src:/var/www
-      # OPTIONAL: add the xdebug profiler path.
-      # This requires you to edit the Dockerfile.app and uncomment the profiler options
-      #- ./xdebug-profiler:/tmp
-
-  ###################################################################
-  # Default Queue Worker (Optional)
-  ###################################################################
-  worker-default:
-    build:
-      context: ./src
-      dockerfile: ../.docker/Dockerfile.app
-      # Define the default User ID for the file ownership of these containers.
-      # to find this out on a unix based system type "id" into a terminal.
-      args:
-        - UID=1000
-    restart: unless-stopped
-    command: /bin/bash -c 'while [ 0 -lt 1 ] ; do php artisan queue:work --tries=3 --timeout=90 --sleep=10; done'
-    volumes:
-      - ./src:/var/www
-      # OPTIONAL: add the xdebug profiler path.
-      # This requires you to edit the Dockerfile.app and uncomment the profiler options
-      #- ./xdebug-profiler:/tmp
-
-  ###################################################################
   # Email Catchers (Pick one!)
   ###################################################################
   # Mailhug (Optional, mail-catcher)

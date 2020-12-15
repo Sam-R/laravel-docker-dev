@@ -29,6 +29,8 @@ RUN apt-get update && apt-get install -y --quiet \
     msmtp \
     libonig-dev \
     libmagickwand-dev \
+    wget \
+    git \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install extensions: Some extentions are better installed using this method than apt in docker
@@ -41,7 +43,10 @@ RUN docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/i
     soap \
     bcmath \
     gd \
-    zip
+    zip \
+    intl \
+    && docker-php-ext-configure \
+    intl
 
 # Install Imagick
 RUN pecl install -o -f imagick \
@@ -50,6 +55,9 @@ RUN pecl install -o -f imagick \
     &&  docker-php-ext-enable imagick \
     redis
 
+RUN wget https://get.symfony.com/cli/installer -O - | bash && \
+    mv /root/.symfony/bin/symfony /usr/local/bin/symfony
+
 ###############################################################################
 # COMPOSER
 ###############################################################################
@@ -57,7 +65,7 @@ RUN pecl install -o -f imagick \
 ###############################################################################
 FROM base as composer
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY ./composer.json /var/www/composer.json
 # By NOT copying composer.lock, packages are free to update to their latest
@@ -67,8 +75,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader
 
 COPY . /var/www
 
-RUN composer install --no-dev && \
-    composer dump-autoload -o
+RUN composer install
 
 ###############################################################################
 # php-config
