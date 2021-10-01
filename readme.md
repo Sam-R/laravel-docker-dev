@@ -2,7 +2,7 @@
 
 A docker-compose environment for simple PHP/MySQL development. Setup for Laravel by default.
 
-Runs PHP 7.4. For PHP 7.2 checkout the `php-7.2` branch.
+Runs PHP 8.0. For PHP 7.2 checkout the `php-7.2` branch.
 
 | Service | URL |
 | --- | --- |

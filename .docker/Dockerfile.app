@@ -3,7 +3,7 @@
 ###############################################################################
 # Install all the OS level packages required for the project
 ###############################################################################
-FROM php:7-fpm as base
+FROM php:8-fpm as base
 
 # Set working directory for future docker commands
 WORKDIR /var/www
