@@ -96,7 +96,7 @@ services:
     # Note: it does need iproute2 installed inside the Dockerfile.app
     #command: ip -4 route list match 0/0 | awk '{print $$3" host.docker.internal"}' >> /etc/hosts
     extra_hosts:
-      - "host.docker.internal:172.17.0.1"
+      - "host.docker.internal:host-gateway"
 
   ###################################################################
   # Redis, for caching and queues (Optional)
