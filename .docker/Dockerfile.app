@@ -3,7 +3,13 @@
 ###############################################################################
 # Install all the OS level packages required for the project
 ###############################################################################
-FROM php:7-fpm as base
+
+# profile = enables code profiling
+# develop = enable development helpers
+# debug = enable step debugging
+ARG XDEBUG_MODE=develop
+
+FROM php:8.0-fpm as base
 
 # Set working directory for future docker commands
 WORKDIR /var/www
@@ -88,22 +94,19 @@ RUN echo "request_terminate_timeout = 3600" >> /usr/local/etc/php-fpm.conf && \
 ###############################################################################
 FROM base as xdebug
 
+ARG XDEBUG_MODE
+
 RUN pecl install xdebug \
-    && echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.remote_autostart=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.default_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.remote_connect_back=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.remote_port = 9001" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.idekey = VSCODE" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.remote_log = /tmp/xdebug.log" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && echo "xdebug.remote_handler=dbgp" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    # XDEBUG Profiling
-    # && echo 'xdebug.profiler_enable = 1' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    # && echo 'xdebug.profiler_output_name = "cachegrind.out.%c"' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    # && echo 'xdebug.profiler_output_dir = "/tmp"' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    # && echo 'xdebug.profiler_enable_trigger = 1' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-    && docker-php-ext-enable xdebug
+ && echo "xdebug.mode = ${XDEBUG_MODE}" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+ && echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+ && echo "xdebug.start_with_request=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+ && echo "xdebug.client_port = 9003" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+ && echo "xdebug.log = /tmp/xdebug.log" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+ # XDEBUG Profiling
+ && echo 'xdebug.profiler_output_name = "cachegrind.out.%c"' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo 'xdebug.output_dir = "/tmp"' >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+ && docker-php-ext-enable xdebug
+
 
 ###############################################################################
 # FPM
