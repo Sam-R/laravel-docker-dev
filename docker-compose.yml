@@ -1,7 +1,6 @@
 version: "3"
 
 services:
-
   ###################################################################
   # Webserver
   ###################################################################
@@ -46,7 +45,7 @@ services:
   #   most people will want, but maybe you don't.
   ###################################################################
   mysql:
-    image: mysql:5.7
+    image: mysql:8.0
     restart: unless-stopped
     tty: true
     ports:
@@ -181,6 +180,7 @@ services:
       # - 1025:1025 # smtp server
       # OPTIONAL: Change the port number before the colon ":" to alter where the Mailhog UI can be accessed
       - 8025:8025 # web ui
+
 
   # # MailDev (Optional, mail-catcher)
   # # Comment out or delete this if you don't want to use it

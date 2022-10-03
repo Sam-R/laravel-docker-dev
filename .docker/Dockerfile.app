@@ -9,7 +9,7 @@
 # debug = enable step debugging
 ARG XDEBUG_MODE=develop
 
-FROM php:8.0-fpm as base
+FROM php:8.1-fpm as base
 
 # Set working directory for future docker commands
 WORKDIR /var/www
