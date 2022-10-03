@@ -2,16 +2,15 @@
 
 A docker-compose environment for simple PHP/MySQL development. Setup for Laravel by default.
 
-Runs PHP 7.4. For PHP 7.2 checkout the `php-7.2` branch.
+Runs PHP 8.1.
 
-| Service | URL |
-| --- | --- |
-| Your website | http://localhost:8080 |
-| Horizon | http://localhost:8080/horizon |
-| Telescope | http://localhost:8080/telescope |
-| MailHog | http://localhost:8025 |
-| -XDebug- | -port 9001- |
-
+| Service      | URL                             |
+| ------------ | ------------------------------- |
+| Your website | http://localhost:8080           |
+| Horizon      | http://localhost:8080/horizon   |
+| Telescope    | http://localhost:8080/telescope |
+| MailHog      | http://localhost:8025           |
+| -XDebug-     | -port 9001-                     |
 
 ## Setup
 
@@ -67,9 +66,7 @@ If you get permissions errors on files, check your user ID on the host by runnin
 
 There are multiple entries for this, so make sure you update all of them! You'll then need to run `sudo docker-compose up -d --build` to rebuild the PHP container with the new UID.
 
-
 > **NOTE**: You may want to remove all the _*existing*_ repository information with `find . | grep "\.git/" | xargs rm -rf`, otherwise your git commands may work against this repository instead of your own!
-
 
 ### Database credentials
 
@@ -114,7 +111,6 @@ sudo docker-compose exec -it php php artisan migrate
 
 http://localhost:8080/horizon
 
-
 ### install Telescope
 
 ```
@@ -126,7 +122,6 @@ php artisan telescope:publish
 ```
 
 http://localhost:8080/telescope
-
 
 ### XDebug
 
@@ -178,6 +173,7 @@ In `Dockerfile.app`, look for the following lines:
 ```
     && echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 ```
+
 If you're on Mac or windows, you may need to change this line to reflect your OS, EG `docker.for.mac.host.internal`
 
 ```
@@ -189,6 +185,7 @@ if you are using a different port for xdebug, change this line
 ```
     && echo "xdebug.idekey = VSCODE" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 ```
+
 and if you're using a different IDE you'll need to update the IDE KEY to match yours, EG `PHPSTORM`
 
 #### docker-compose.yml
@@ -208,6 +205,7 @@ docker-compose exec nginx sh
 / # ip -4 route list match 0/0 | awk '{print $3}'
 172.17.0.1
 ```
+
 and using that value to update the `docker-compose.yml` file, then rebuilding the stack using `docker-compose up -d --build`
 
 ### Xdebug Profiler
@@ -263,4 +261,3 @@ Stop the docker containers
 
 Delete all volumes from stopped containers
 `sudo docker-compose rm -v`
-
